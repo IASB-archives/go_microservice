@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -14,7 +15,7 @@ import (
 	"github.com/hashicorp/go-hclog"
 )
 
-func configure(shopLog hclog.Logger, router *mux.Router) http.Server {
+func configure(shopLog hclog.Logger, router *mux.Router, port string) http.Server {
 	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
 	originsOk := handlers.AllowedOrigins([]string{"*"})
 	methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "OPTIONS"})
@@ -22,7 +23,7 @@ func configure(shopLog hclog.Logger, router *mux.Router) http.Server {
 
 	// create a new server
 	s := http.Server{
-		Addr:         ":9090",                                                // configure the bind address
+		Addr:         fmt.Sprintf(":%s", port),                               // configure the bind address
 		Handler:      ch(router),                                             // set the default handler
 		ErrorLog:     shopLog.StandardLogger(&hclog.StandardLoggerOptions{}), // set the logger for the server
 		ReadTimeout:  5 * time.Second,                                        // max time to read request from the client
@@ -32,12 +33,12 @@ func configure(shopLog hclog.Logger, router *mux.Router) http.Server {
 	return s
 }
 
-func Start(shopLog hclog.Logger) {
+func Start(shopLog hclog.Logger, port string) {
 	router := createRouter(shopLog)
-	server := configure(shopLog, router)
+	server := configure(shopLog, router, port)
 	// start the server
 	go func() {
-		shopLog.Info("Starting server on port 9090")
+		shopLog.Info("Starting server", "port", port)
 
 		err := server.ListenAndServe()
 		if err != nil {
