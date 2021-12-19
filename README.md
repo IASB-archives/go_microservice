@@ -1,6 +1,6 @@
 # go_microservice
 
-microservice demo
+Modular REST Api implementation example using [gorilla/mux](https://www.gorillatoolkit.org/pkg/mux), [gorilla/handlers](https://github.com/gorilla/handlers), [go-hclog](http://godoc.org/github.com/hashicorp/go-hclog) & [GoDotEnv](https://github.com/joho/godotenv) packages
 
 ## prod-api
 
