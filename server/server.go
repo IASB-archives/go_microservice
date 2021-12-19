@@ -2,23 +2,19 @@ package server
 
 import (
 	"context"
-	"log"
+	"encoding/json"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/fun-to-projects/go_microservice/router"
 	"github.com/gorilla/handlers"
+	"github.com/gorilla/mux"
 	"github.com/hashicorp/go-hclog"
 )
 
-type Server struct {
-	Logger hclog.Logger
-}
-
-func configure(shopLog hclog.Logger, router *router.Router) http.Server {
+func configure(shopLog hclog.Logger, router *mux.Router) http.Server {
 	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
 	originsOk := handlers.AllowedOrigins([]string{"*"})
 	methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "OPTIONS"})
@@ -36,7 +32,8 @@ func configure(shopLog hclog.Logger, router *router.Router) http.Server {
 	return s
 }
 
-func Start(shopLog hclog.Logger, router *router.Router) {
+func Start(shopLog hclog.Logger) {
+	router := createRouter(shopLog)
 	server := configure(shopLog, router)
 	// start the server
 	go func() {
@@ -56,9 +53,20 @@ func Start(shopLog hclog.Logger, router *router.Router) {
 
 	// Block until a signal is received.
 	sig := <-c
-	log.Println("Got signal:", sig)
+	shopLog.Info("Signal received", "signal", sig)
 
 	// gracefully shutdown the server, waiting max 30 seconds for current operations to complete
 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
 	server.Shutdown(ctx)
+}
+
+func createRouter(shopLog hclog.Logger) *mux.Router {
+	router := mux.NewRouter()
+	getR := router.Methods(http.MethodGet).Subrouter()
+	getR.HandleFunc("/products", func(rw http.ResponseWriter, r *http.Request) {
+		shopLog.Info("[GET] Request received")
+
+		_ = json.NewEncoder(rw).Encode(nil)
+	})
+	return router
 }
