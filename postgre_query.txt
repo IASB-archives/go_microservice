@@ -1,0 +1,5 @@
+CREATE TABLE users (
+    prodId SERIAL PRIMARY KEY,
+    prodName TEXT,
+    prodPrice REAL
+);
