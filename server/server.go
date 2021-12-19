@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/go-hclog"
 )
 
-func configure(shopLog hclog.Logger, router *mux.Router, port string) http.Server {
+func configure(shopLog hclog.Logger, router *mux.Router, port string) *http.Server {
 	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
 	originsOk := handlers.AllowedOrigins([]string{"*"})
 	methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "OPTIONS"})
@@ -30,7 +30,7 @@ func configure(shopLog hclog.Logger, router *mux.Router, port string) http.Serve
 		WriteTimeout: 10 * time.Second,                                       // max time to write response to the client
 		IdleTimeout:  120 * time.Second,                                      // max time for connections using TCP Keep-Alive
 	}
-	return s
+	return &s
 }
 
 func Start(shopLog hclog.Logger, port string) {
@@ -57,7 +57,8 @@ func Start(shopLog hclog.Logger, port string) {
 	shopLog.Info("Signal received", "signal", sig)
 
 	// gracefully shutdown the server, waiting max 30 seconds for current operations to complete
-	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	server.Shutdown(ctx)
 }
 
